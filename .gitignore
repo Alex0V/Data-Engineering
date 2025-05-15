@@ -1,2 +1,5 @@
 venv
 *.zip
+*.rar
+*.csv
+commands.txt
