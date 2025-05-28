@@ -1,0 +1,89 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    hostname: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  broker1:
+    image: confluentinc/cp-kafka:latest
+    container_name: broker1
+    hostname: broker1
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+
+  broker2:
+    image: confluentinc/cp-kafka:latest
+    container_name: broker2
+    hostname: broker2
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9093:9093"
+
+  kafka-ui:
+    container_name: kafka-ui
+    hostname: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - broker1
+      - broker2
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker1:9092,broker2:9093
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    ports:
+      - "8080:8080"
+
+  producer:
+    build: ./producer
+    container_name: producer
+    hostname: producer
+    depends_on:
+      - broker1
+      - broker2
+    environment:
+      TOPIC: foobar
+      BOOTSTRAP_SERVERS: broker1:9092,broker2:9093
+
+
+  consumer1:
+    build: ./consumer1
+    container_name: consumer1
+    hostname: consumer1
+    depends_on:
+      - broker1
+      - broker2
+    environment:
+      BOOTSTRAP_SERVERS: broker1:9092,broker2:9093
+      TOPIC: Topic1
+
+  consumer2:
+    build: ./consumer2
+    container_name: consumer2
+    hostname: consumer2
+    depends_on:
+      - broker1
+      - broker2
+    environment:
+      BOOTSTRAP_SERVERS: broker1:9092, broker2:9093
+      TOPIC: Topic2
+
